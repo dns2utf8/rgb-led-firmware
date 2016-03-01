@@ -47,9 +47,15 @@ struct NColor {
   uint8_t r;
   uint8_t g;
   uint8_t b;
+
+  boolean operator==(NColor const o) {
+    return r == o.r && g == o.g && b == o.b;
+  }
 };
 
-static NColor current{ r: 0, g: 0, b: 0 }, input{}, target{}, dark_red{ r: 50, g: 0, b: 0 }, red{ r: 200, 70, 23 };
+static NColor current{ r: 0, g: 0, b: 0 }, input{}
+          , off{ r: 0, g: 0, b: 0 }, night{ r: 0, g: 0, b: 23 }, dark_red{ r: 50, g: 0, b: 0 }, red{ r: 170, g: 0, b: 0 }, orange{ 180, 100, 0 }, morning{ r: 200, 70, 23 }, day{ r: 255, g: 255, b: 255 };
+static NColor wheel[] = { off, dark_red, red, orange, morning, day, day, day, orange, red, dark_red };
 static boolean first_run = true;
 static int resume_count_down = 0;
 static int max_resume_count_down = 420, init_speed = 666;
@@ -69,6 +75,8 @@ void set_colors(void) {
     analogWrite(LED_G, current.g);
     analogWrite(LED_B, current.b);
 }
+
+void sunrise_step(void);
 
 // Main loop
 void effect_sunrise(void) {
@@ -121,12 +129,36 @@ void effect_sunrise(void) {
 
       --resume_count_down;
     } else {
-      current = red;
+      sunrise_step();
     }
 
     set_colors();
   
     // Sleep
     delay(13);
+}
+
+uint8_t max_step_size = 1;
+template<typename T>
+int8_t safe_step(T a, T b) {
+  if (a < b) {
+    return max(a - b, -max_step_size);
+  } else {
+    return min(a - b, max_step_size);
+  }
+}
+
+static uint8_t wheel_step = 0;
+static NColor target{ r: 0, g: 0, b: 0 };
+void sunrise_step(void) {
+  if (current == target) {
+    wheel_step = ++wheel_step % sizeof(wheel);
+  } else {
+    current.r += safe_step(current.r, target.r);
+    current.g += safe_step(current.r, target.g);
+    current.b += safe_step(current.r, target.b);
+  }
+
+  delay(66);
 }
 
