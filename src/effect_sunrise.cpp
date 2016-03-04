@@ -48,17 +48,19 @@ struct NColor {
   uint8_t g;
   uint8_t b;
 
-  boolean operator==(NColor const o) {
+  boolean operator==(NColor const o) const {
     return r == o.r && g == o.g && b == o.b;
   }
 };
 
-static NColor current{ r: 0, g: 0, b: 0 }, input{}
-          , off{ r: 0, g: 0, b: 0 }, night{ r: 0, g: 0, b: 23 }, dark_red{ r: 50, g: 0, b: 0 }, red{ r: 170, g: 0, b: 0 }, orange{ 180, 100, 0 }, morning{ r: 200, 70, 23 }, day{ r: 255, g: 255, b: 255 };
-static NColor wheel[] = { off, dark_red, red, orange, morning, day, day, day, orange, red, dark_red };
+static NColor current{ r: 0, g: 0, b: 0 }, input{};
+static const NColor off{ r: 0, g: 0, b: 0 }, night{ r: 0, g: 0, b: 23 }, dark_red{ r: 50, g: 0, b: 0 }, red{ r: 170, g: 0, b: 0 }, orange{ 180, 100, 0 }, morning{ r: 200, 70, 23 }, day{ r: 255, g: 255, b: 255 };
+static const uint8_t wheel_length = 9;
+static const NColor wheel[wheel_length] = { off, dark_red, red, orange, morning, day, morning, orange, dark_red };
+
 static boolean first_run = true;
 static int resume_count_down = 0;
-static int max_resume_count_down = 420, init_speed = 666;
+static const int max_resume_count_down = 420, init_speed = 666;
 
 template<typename T>
 boolean within_range(T a, T b) {
@@ -82,7 +84,7 @@ void sunrise_step(void);
 void effect_sunrise(void) {
     if (first_run) {
       set_colors();
-      delay(init_speed);
+      /*delay(init_speed);
       
       current.r = 255;
       set_colors();
@@ -99,7 +101,7 @@ void effect_sunrise(void) {
       delay(init_speed);
       
       current.b = 0;
-      set_colors();
+      set_colors();*/
     }
     
     uint8_t r = normalized_read(POT_1);
@@ -112,8 +114,6 @@ void effect_sunrise(void) {
       input.b = b;
       
       first_run = false;
-
-      current = dark_red;
     }
 
     if (has_changed_userinput(r, g, b)) {
@@ -138,27 +138,28 @@ void effect_sunrise(void) {
     delay(13);
 }
 
-uint8_t max_step_size = 1;
-template<typename T>
-int8_t safe_step(T a, T b) {
-  if (a < b) {
-    return max(a - b, -max_step_size);
+static const int8_t max_step_size = 1;
+int8_t safe_step(uint8_t c, uint8_t t) {
+  if (c < t && c < 255) {
+    return 1;
   }
-  if (b > 0) {
-    return min(a - b, max_step_size);
+  if (c > t && c > 0) {
+    return -1;
   }
   return 0;
 }
 
 static uint8_t wheel_step = 0;
-static NColor target{ r: 0, g: 0, b: 0 };
+static NColor target = wheel[0];
 void sunrise_step(void) {
   if (current == target) {
-    wheel_step = ++wheel_step % sizeof(wheel);
+    wheel_step = (wheel_step +1) % wheel_length;
+    target = wheel[ wheel_step ];
+    
   } else {
     current.r += safe_step(current.r, target.r);
-    current.g += safe_step(current.r, target.g);
-    current.b += safe_step(current.r, target.b);
+    current.g += safe_step(current.g, target.g);
+    current.b += safe_step(current.b, target.b);
   }
 
   delay(66);
