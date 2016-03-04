@@ -53,6 +53,11 @@ void setup() {
     pinMode(LED_G, OUTPUT);
     pinMode(LED_B, OUTPUT);
 
+    // Disable LEDs during boot
+    analogWrite(LED_R, 0);
+    analogWrite(LED_G, 0);
+    analogWrite(LED_B, 0);
+
     // Set pot pins as input
     pinMode(POT_1, INPUT);
     pinMode(POT_2, INPUT);
