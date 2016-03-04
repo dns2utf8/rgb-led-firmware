@@ -143,9 +143,11 @@ template<typename T>
 int8_t safe_step(T a, T b) {
   if (a < b) {
     return max(a - b, -max_step_size);
-  } else {
+  }
+  if (b > 0) {
     return min(a - b, max_step_size);
   }
+  return 0;
 }
 
 static uint8_t wheel_step = 0;
